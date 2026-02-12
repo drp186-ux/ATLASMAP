@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AtlasBus РФ — карта маршрутов</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .panel {
+      position: absolute; top: 12px; left: 12px; z-index: 1000;
+      background: rgba(255,255,255,0.96);
+      padding: 12px; border-radius: 14px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+      max-width: 760px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 14px;
+    }
+    .title { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .title img { width:28px; height:28px; }
+    .title h1 { font-size: 16px; margin: 0; font-weight: 700; }
+    .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+    select, button { padding: 7px 10px; border-radius: 10px; border: 1px solid #ddd; background: white; }
+    select { width: 100%; }
+    .small { font-size: 12px; color: #555; line-height: 1.25; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .bar { height: 10px; background: #eee; border-radius: 999px; overflow: hidden; }
+    .bar > div { height: 100%; width: 0%; background: #333; }
+    .err { color: #b00020; font-weight: 700; }
+    .legend { margin-top: 10px; font-size: 12px; max-height: 180px; overflow: auto; padding-right: 4px; }
+    .legend div { display: flex; align-items: center; margin-bottom: 4px; }
+    .legend span { display: inline-block; width: 14px; height: 14px; margin-right: 7px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="panel">
+  <div class="title">
+    <img src="assets/logo.svg" alt="AtlasBus">
+    <h1>AtlasBus РФ — карта маршрутов</h1>
+  </div>
+
+  <div class="row">
+    <button id="showAllBtn">Показать все маршруты</button>
+    <button id="showRouteBtn">Показать маршрут</button>
+    <button id="clearBtn">Очистить</button>
+  </div>
+
+  <div class="row">
+    <label style="min-width:85px;">Перевозчик</label>
+    <select id="carrierSel"></select>
+  </div>
+
+  <div class="row">
+    <label style="min-width:85px;">Маршрут</label>
+    <select id="routeSel"></select>
+  </div>
+
+  <div class="small">Статус: <span id="status" class="mono"></span></div>
+  <div style="margin-top:8px;" class="bar"><div id="prog"></div></div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="small" style="margin-top:8px;">
+    Обновление: замени <span class="mono">data/partners.xlsx</span> в GitHub — данные пересоберутся автоматически.
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var statusEl=document.getElementById('status');
+var progEl=document.getElementById('prog');
+function setStatus(msg,pct,isErr){
+  statusEl.innerHTML = isErr ? '<span class="err">'+msg+'</span>' : msg;
+  if(pct!==null && pct!==undefined){
+    var p=Math.max(0,Math.min(100,pct));
+    progEl.style.width=p+'%';
+  }
+}
+
+var map=L.map('map');
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:18, attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
+map.setView([55.75,37.62],4);
+
+var layers=[];
+function clearAll(){ for(var i=0;i<layers.length;i++) map.removeLayer(layers[i]); layers=[]; }
+document.getElementById('clearBtn').onclick=function(){ clearAll(); setStatus('Очищено.',0,false); };
+
+var ROUTES=null;
+
+function fetchJson(path, cb){
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET', path, true);
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4) return;
+    if(xhr.status!==200) return cb('HTTP '+xhr.status, null);
+    try{ cb(null, JSON.parse(xhr.responseText)); } catch(e){ cb('parse error', null); }
+  };
+  xhr.send();
+}
+
+var cacheKey='atlas_geo_cache_pages_v1';
+var geoCache={};
+try{ geoCache=JSON.parse(localStorage.getItem(cacheKey)||'{}'); }catch(e){ geoCache={}; }
+function saveCache(){ try{ localStorage.setItem(cacheKey, JSON.stringify(geoCache)); }catch(e){} }
+
+function geocode(name, cb){
+  if(geoCache[name]) return cb(geoCache[name]);
+  var url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(name);
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4) return;
+    if(xhr.status!==200) return cb(null);
+    try{
+      var arr=JSON.parse(xhr.responseText);
+      if(!arr || !arr.length) return cb(null);
+      var out=[parseFloat(arr[0].lat), parseFloat(arr[0].lon)];
+      geoCache[name]=out; saveCache(); cb(out);
+    }catch(e){ cb(null); }
+  };
+  xhr.send();
+}
+
+function drawRoute(r, done){
+  var coords=[], i=0;
+  function step(){
+    if(i>=r.points.length){
+      if(coords.length>=2){
+        var line=L.polyline(coords,{weight:4,opacity:0.9,color:r.color||'#1f77b4'}).addTo(map);
+        layers.push(line);
+      }
+      return done(coords);
+    }
+    geocode(r.points[i], function(latlon){
+      if(latlon) coords.push(latlon);
+      i++; setTimeout(step, 140);
+    });
+  }
+  step();
+}
+
+var carrierSel=document.getElementById('carrierSel');
+var routeSel=document.getElementById('routeSel');
+
+function populate(){
+  var carriers={};
+  for(var i=0;i<ROUTES.length;i++) carriers[ROUTES[i].carrier]=ROUTES[i].color;
+
+  carrierSel.innerHTML='';
+  var allOpt=document.createElement('option'); allOpt.value='__ALL__'; allOpt.textContent='— все —';
+  carrierSel.appendChild(allOpt);
+
+  for(var c in carriers){
+    var o=document.createElement('option'); o.value=c; o.textContent=c; carrierSel.appendChild(o);
+  }
+
+  var legend=document.getElementById('legend');
+  legend.innerHTML='';
+  for(var c2 in carriers){
+    legend.innerHTML += '<div><span style="background:'+carriers[c2]+'"></span>'+c2+'</div>';
+  }
+
+  refresh();
+}
+
+function refresh(){
+  var sel=carrierSel.value;
+  routeSel.innerHTML='';
+  for(var i=0;i<ROUTES.length;i++){
+    var r=ROUTES[i];
+    if(sel==='__ALL__' || r.carrier===sel){
+      var o=document.createElement('option');
+      o.value=r.route_id; o.textContent=r.route_name;
+      routeSel.appendChild(o);
+    }
+  }
+  setStatus('Готово. По умолчанию пусто.',0,false);
+}
+carrierSel.onchange=refresh;
+
+function getRouteById(id){
+  for(var i=0;i<ROUTES.length;i++) if(ROUTES[i].route_id===id) return ROUTES[i];
+  return null;
+}
+
+document.getElementById('showRouteBtn').onclick=function(){
+  var r=getRouteById(routeSel.value);
+  if(!r) return;
+  clearAll();
+  setStatus('Рисую маршрут…',10,false);
+  drawRoute(r, function(coords){
+    if(coords.length>=2) map.fitBounds(L.latLngBounds(coords),{padding:[30,30]});
+    setStatus('Готово.',100,false);
+  });
+};
+
+document.getElementById('showAllBtn').onclick=function(){
+  clearAll();
+  var sel=carrierSel.value;
+  var queue=[];
+  for(var i=0;i<ROUTES.length;i++){
+    if(sel==='__ALL__' || ROUTES[i].carrier===sel) queue.push(ROUTES[i]);
+  }
+  if(!queue.length) return;
+
+  var idx=0, bounds=null;
+  function next(){
+    if(idx>=queue.length){
+      if(bounds) map.fitBounds(bounds,{padding:[30,30]});
+      setStatus('Готово. Маршрутов: '+queue.length,100,false);
+      return;
+    }
+    setStatus('Рисую ('+(idx+1)+'/'+queue.length+')…', Math.round((idx/queue.length)*100), false);
+    drawRoute(queue[idx], function(coords){
+      if(coords.length>=2){
+        var b=L.latLngBounds(coords);
+        bounds = bounds ? bounds.extend(b) : b;
+      }
+      idx++; setTimeout(next, 80);
+    });
+  }
+  next();
+};
+
+setStatus('Загрузка data/routes.json…',0,false);
+fetchJson('data/routes.json', function(err, data){
+  if(err){ setStatus('Ошибка загрузки routes.json ('+err+')',0,true); return; }
+  ROUTES=data;
+  populate();
+  setStatus('Готово. По умолчанию пусто.',0,false);
+});
+</script>
+</body>
+</html>

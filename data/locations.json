@@ -1,0 +1,296 @@
+[
+  {
+    "name": "Анапа",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Арзамас",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Архангельск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Балаково",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Великий Новгород",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Вельск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Верхняя Тойма",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Верховажье",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Волгоград",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Вологда",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Вытегра",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Геленджик",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Иловля",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Кабардинка",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Казань",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Калач-на-Дону",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Камышин",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Кичменский Городок",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Коряжма",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Кострома",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Котлас",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Котово",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Красавино",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Кулой",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Липин Бор",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Минск, Беларусь",
+    "country": "BY",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Михайловка",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Морозовск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Москва",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Нижний Новгород",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Никольск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Новоаннинский",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Октябрьский",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Пенза",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Петров Вал",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Полоцк, Беларусь",
+    "country": "BY",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Псков",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Ростов-на-Дону",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Санкт-Петербург",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Саранск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Саратов",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Суровикино",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Сызрань",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Ульяновск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Урюпинск",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Фролово",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Череповец",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Шахты",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  },
+  {
+    "name": "Ярославль",
+    "country": "RU",
+    "lat": null,
+    "lon": null
+  }
+]
