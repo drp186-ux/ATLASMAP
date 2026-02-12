@@ -1,239 +1,125 @@
 <!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AtlasBus РФ — карта маршрутов</title>
-  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <style>
-    html, body, #map { height: 100%; margin: 0; }
-    .panel {
-      position: absolute; top: 12px; left: 12px; z-index: 1000;
-      background: rgba(255,255,255,0.96);
-      padding: 12px; border-radius: 14px;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.18);
-      max-width: 760px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size: 14px;
-    }
-    .title { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-    .title img { width:28px; height:28px; }
-    .title h1 { font-size: 16px; margin: 0; font-weight: 700; }
-    .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
-    select, button { padding: 7px 10px; border-radius: 10px; border: 1px solid #ddd; background: white; }
-    select { width: 100%; }
-    .small { font-size: 12px; color: #555; line-height: 1.25; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-    .bar { height: 10px; background: #eee; border-radius: 999px; overflow: hidden; }
-    .bar > div { height: 100%; width: 0%; background: #333; }
-    .err { color: #b00020; font-weight: 700; }
-    .legend { margin-top: 10px; font-size: 12px; max-height: 180px; overflow: auto; padding-right: 4px; }
-    .legend div { display: flex; align-items: center; margin-bottom: 4px; }
-    .legend span { display: inline-block; width: 14px; height: 14px; margin-right: 7px; border-radius: 3px; }
-  </style>
-</head>
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AtlasBus РФ — карта маршрутов (FULL)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+html,body,#map{height:100%;margin:0;}
+.panel{position:absolute;top:10px;left:10px;z-index:1000;background:rgba(255,255,255,0.95);
+padding:10px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.15);max-width:720px;
+font-family:system-ui;font-size:14px;}
+.row{display:flex;gap:8px;margin:6px 0;align-items:center;}
+select,button{padding:6px 8px;border-radius:10px;border:1px solid #ddd;background:white;}
+select{width:100%;}
+.legend{margin-top:8px;font-size:12px;max-height:180px;overflow:auto;}
+.legend div{display:flex;align-items:center;margin-bottom:4px;}
+.legend span{display:inline-block;width:14px;height:14px;margin-right:6px;border-radius:3px;}
+</style></head>
 <body>
 <div id="map"></div>
-
 <div class="panel">
-  <div class="title">
-    <img src="assets/logo.svg" alt="AtlasBus">
-    <h1>AtlasBus РФ — карта маршрутов</h1>
-  </div>
-
-  <div class="row">
-    <button id="showAllBtn">Показать все маршруты</button>
-    <button id="showRouteBtn">Показать маршрут</button>
-    <button id="clearBtn">Очистить</button>
-  </div>
-
-  <div class="row">
-    <label style="min-width:85px;">Перевозчик</label>
-    <select id="carrierSel"></select>
-  </div>
-
-  <div class="row">
-    <label style="min-width:85px;">Маршрут</label>
-    <select id="routeSel"></select>
-  </div>
-
-  <div class="small">Статус: <span id="status" class="mono"></span></div>
-  <div style="margin-top:8px;" class="bar"><div id="prog"></div></div>
-
-  <div class="legend" id="legend"></div>
-
-  <div class="small" style="margin-top:8px;">
-    Обновление: замени <span class="mono">data/partners.xlsx</span> в GitHub — данные пересоберутся автоматически.
-  </div>
+<div class="row">
+<button id="showAllBtn">Показать все маршруты</button>
+<button id="showRouteBtn">Показать маршрут</button>
+<button id="clearBtn">Очистить</button>
+</div>
+<div class="row">
+<label style="min-width:85px;">Перевозчик</label>
+<select id="carrierSel"></select>
+</div>
+<div class="row">
+<label style="min-width:85px;">Маршрут</label>
+<select id="routeSel"></select>
+</div>
+<div class="legend" id="legend"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var statusEl=document.getElementById('status');
-var progEl=document.getElementById('prog');
-function setStatus(msg,pct,isErr){
-  statusEl.innerHTML = isErr ? '<span class="err">'+msg+'</span>' : msg;
-  if(pct!==null && pct!==undefined){
-    var p=Math.max(0,Math.min(100,pct));
-    progEl.style.width=p+'%';
-  }
-}
+var ROUTES = [{"route_id": "RTE_0001", "carrier": "ИП Гальчук", "color": "#e377c2", "points": ["Котово", "Петров Вал", "Волгоград"], "route_name": "Котово → Петров Вал → Волгоград"}, {"route_id": "RTE_0002", "carrier": "ИП Румянцева О.В.", "color": "#843c39", "points": ["Волгоград", "Суровикино", "Морозовск", "Шахты", "Ростов-на-Дону"], "route_name": "Волгоград → Суровикино → Морозовск → Шахты → Ростов-на-Дону"}, {"route_id": "RTE_0003", "carrier": "ИП ХАРИНИН Ю А", "color": "#2ca02c", "points": ["Котово", "Камышин"], "route_name": "Котово → Камышин"}, {"route_id": "RTE_0004", "carrier": "ИП Борисов А М", "color": "#8c564b", "points": ["Вологда", "Липин Бор", "Вытегра"], "route_name": "Вологда → Липин Бор → Вытегра"}, {"route_id": "RTE_0005", "carrier": "ИП Алексеев Д. С.", "color": "#2ca02c", "points": ["Вологда", "Верховажье", "Вельск"], "route_name": "Вологда → Верховажье → Вельск"}, {"route_id": "RTE_0006", "carrier": "ИП Алексеев Д. С.", "color": "#2ca02c", "points": ["Вологда", "Анапа", "Кабардинка", "Геленджик"], "route_name": "Вологда → Анапа → Кабардинка → Геленджик"}, {"route_id": "RTE_0007", "carrier": "ООО АТЛАС ЛОГИСТИКА", "color": "#8c564b", "points": ["Саратов", "Балаково", "Сызрань", "Ульяновск", "Казань"], "route_name": "Саратов → Балаково → Сызрань → Ульяновск → Казань"}, {"route_id": "RTE_0008", "carrier": "ИП Александрина", "color": "#ff7f0e", "points": ["Калач-на-Дону", "Волгоград"], "route_name": "Калач-на-Дону → Волгоград"}, {"route_id": "RTE_0009", "carrier": "ИП Губин А С", "color": "#7f7f7f", "points": ["Урюпинск", "Новоаннинский", "Михайловка", "Фролово", "Иловля", "Волгоград"], "route_name": "Урюпинск → Новоаннинский → Михайловка → Фролово → Иловля → Волгоград"}, {"route_id": "RTE_0010", "carrier": "ИП Рыкованов", "color": "#7b4173", "points": ["Череповец", "Липин Бор", "Вытегра"], "route_name": "Череповец → Липин Бор → Вытегра"}, {"route_id": "RTE_0011", "carrier": "ИП Рыкованов", "color": "#7b4173", "points": ["Архангельск", "Верхняя Тойма", "Котлас"], "route_name": "Архангельск → Верхняя Тойма → Котлас"}, {"route_id": "RTE_0012", "carrier": "ИП Рыкованов", "color": "#7b4173", "points": ["Вологда", "Вельск", "Кулой", "Октябрьский"], "route_name": "Вологда → Вельск → Кулой → Октябрьский"}, {"route_id": "RTE_0013", "carrier": "ИП Рыкованов", "color": "#7b4173", "points": ["Вологда", "Ярославль", "Кострома"], "route_name": "Вологда → Ярославль → Кострома"}, {"route_id": "RTE_0014", "carrier": "ИП Мишин", "color": "#637939", "points": ["Иловля", "Волгоград"], "route_name": "Иловля → Волгоград"}, {"route_id": "RTE_0015", "carrier": "ИП Гула Роман Викторович", "color": "#bcbd22", "points": ["Саратов", "Пенза", "Саранск", "Арзамас", "Нижний Новгород"], "route_name": "Саратов → Пенза → Саранск → Арзамас → Нижний Новгород"}, {"route_id": "RTE_0016", "carrier": "СКС", "color": "#637939", "points": ["Санкт-Петербург", "Псков", "Полоцк, Беларусь", "Минск, Беларусь"], "route_name": "Санкт-Петербург → Псков → Полоцк, Беларусь → Минск, Беларусь"}, {"route_id": "RTE_0017", "carrier": "СКС", "color": "#637939", "points": ["Санкт-Петербург", "Великий Новгород"], "route_name": "Санкт-Петербург → Великий Новгород"}, {"route_id": "RTE_0018", "carrier": "Атлас Северо-Запад", "color": "#1f77b4", "points": ["Санкт-Петербург", "Череповец", "Вологда"], "route_name": "Санкт-Петербург → Череповец → Вологда"}, {"route_id": "RTE_0019", "carrier": "ИП Бабушкин (Гарант авто)", "color": "#9467bd", "points": ["Череповец", "Вологда", "Коряжма"], "route_name": "Череповец → Вологда → Коряжма"}, {"route_id": "RTE_0020", "carrier": "ИП Бабушкин (Гарант авто)", "color": "#9467bd", "points": ["Красавино", "Вологда", "Череповец"], "route_name": "Красавино → Вологда → Череповец"}, {"route_id": "RTE_0021", "carrier": "ИП Бабушкин (Гарант авто)", "color": "#9467bd", "points": ["Вологда", "Коряжма"], "route_name": "Вологда → Коряжма"}, {"route_id": "RTE_0022", "carrier": "ИП Недобельский", "color": "#8c6d31", "points": ["Вологда", "Никольск"], "route_name": "Вологда → Никольск"}, {"route_id": "RTE_0023", "carrier": "ИП Недобельский", "color": "#8c6d31", "points": ["Вологда", "Кичменский Городок"], "route_name": "Вологда → Кичменский Городок"}, {"route_id": "RTE_0024", "carrier": "ООО Автолидер", "color": "#7f7f7f", "points": ["Череповец", "Вологда", "Ярославль", "Москва"], "route_name": "Череповец → Вологда → Ярославль → Москва"}, {"route_id": "RTE_0025", "carrier": "ИП Рыльцев", "color": "#1f77b4", "points": ["Волгоград", "Камышин"], "route_name": "Волгоград → Камышин"}, {"route_id": "RTE_0026", "carrier": "ООО АТЛАС ЛОГИСТИКА", "color": "#8c564b", "points": ["Волгоград", "Камышин", "Саратов"], "route_name": "Волгоград → Камышин → Саратов"}, {"route_id": "RTE_0027", "carrier": "ИП Комалеева", "color": "#17becf", "points": ["Салават", "Казань"], "route_name": "Салават → Казань"}, {"route_id": "RTE_0028", "carrier": "ИП Комалеева", "color": "#17becf", "points": ["Оренбург", "Казань"], "route_name": "Оренбург → Казань"}, {"route_id": "RTE_0029", "carrier": "ИП Комалеева", "color": "#17becf", "points": ["Туймазы", "Набережные Челны"], "route_name": "Туймазы → Набережные Челны"}, {"route_id": "RTE_0030", "carrier": "ИП Комалеева", "color": "#17becf", "points": ["Уфа", "Казань"], "route_name": "Уфа → Казань"}, {"route_id": "RTE_0031", "carrier": "ООО Транспорт", "color": "#393b79", "points": ["Уруссу", "Набережные Челны"], "route_name": "Уруссу → Набережные Челны"}, {"route_id": "RTE_0032", "carrier": "ИП Амельченко", "color": "#d62728", "points": ["Пермь", "Казань"], "route_name": "Пермь → Казань"}, {"route_id": "RTE_0033", "carrier": "ИП Амельченко", "color": "#d62728", "points": ["Пермь", "Москва"], "route_name": "Пермь → Москва"}, {"route_id": "RTE_0034", "carrier": "ООО Победа", "color": "#bcbd22", "points": ["Уфа", "Москва"], "route_name": "Уфа → Москва"}, {"route_id": "RTE_0035", "carrier": "ООО АТП 1", "color": "#e377c2", "points": ["Уфа", "Нижний Новгород"], "route_name": "Уфа → Нижний Новгород"}, {"route_id": "RTE_0036", "carrier": "ООО РТК 2000", "color": "#17becf", "points": ["Оренбург", "Орск"], "route_name": "Оренбург → Орск"}, {"route_id": "RTE_0037", "carrier": "ИП Кужман", "color": "#393b79", "points": ["Оренбург", "Илек"], "route_name": "Оренбург → Илек"}, {"route_id": "RTE_0038", "carrier": "ИП Кужман", "color": "#393b79", "points": ["Оренбург", "Мухраново"], "route_name": "Оренбург → Мухраново"}, {"route_id": "RTE_0039", "carrier": "ООО \"ТурТранс\"", "color": "#9467bd", "points": ["Челябинск", "Кыштым"], "route_name": "Челябинск → Кыштым"}, {"route_id": "RTE_0040", "carrier": "ООО \"ТурТранс\"", "color": "#9467bd", "points": ["Челябинск", "Миасс"], "route_name": "Челябинск → Миасс"}, {"route_id": "RTE_0041", "carrier": "ООО \"ТурТранс\"", "color": "#9467bd", "points": ["Челябинск", "Екатеринбург"], "route_name": "Челябинск → Екатеринбург"}, {"route_id": "RTE_0042", "carrier": "ООО \"Бал плюс\"", "color": "#d62728", "points": ["Уфа", "Казань"], "route_name": "Уфа → Казань"}, {"route_id": "RTE_0043", "carrier": "ИП Семенов", "color": "#ff7f0e", "points": ["Оренбург", "Тюльган"], "route_name": "Оренбург → Тюльган"}];
 
 var map=L.map('map');
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:18, attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
 map.setView([55.75,37.62],4);
 
 var layers=[];
-function clearAll(){ for(var i=0;i<layers.length;i++) map.removeLayer(layers[i]); layers=[]; }
-document.getElementById('clearBtn').onclick=function(){ clearAll(); setStatus('Очищено.',0,false); };
+function clearAll(){for(var i=0;i<layers.length;i++) map.removeLayer(layers[i]); layers=[];}
+document.getElementById('clearBtn').onclick=clearAll;
 
-var ROUTES=null;
-
-function fetchJson(path, cb){
-  var xhr=new XMLHttpRequest();
-  xhr.open('GET', path, true);
-  xhr.onreadystatechange=function(){
-    if(xhr.readyState!==4) return;
-    if(xhr.status!==200) return cb('HTTP '+xhr.status, null);
-    try{ cb(null, JSON.parse(xhr.responseText)); } catch(e){ cb('parse error', null); }
-  };
-  xhr.send();
+var cache={};
+function geocode(name,cb){
+ if(cache[name]) return cb(cache[name]);
+ fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(name))
+ .then(r=>r.json()).then(d=>{
+   if(d.length){
+     cache[name]=[parseFloat(d[0].lat),parseFloat(d[0].lon)];
+     cb(cache[name]);
+   } else cb(null);
+ });
 }
 
-var cacheKey='atlas_geo_cache_pages_v1';
-var geoCache={};
-try{ geoCache=JSON.parse(localStorage.getItem(cacheKey)||'{}'); }catch(e){ geoCache={}; }
-function saveCache(){ try{ localStorage.setItem(cacheKey, JSON.stringify(geoCache)); }catch(e){} }
-
-function geocode(name, cb){
-  if(geoCache[name]) return cb(geoCache[name]);
-  var url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(name);
-  var xhr=new XMLHttpRequest();
-  xhr.open('GET', url, true);
-  xhr.onreadystatechange=function(){
-    if(xhr.readyState!==4) return;
-    if(xhr.status!==200) return cb(null);
-    try{
-      var arr=JSON.parse(xhr.responseText);
-      if(!arr || !arr.length) return cb(null);
-      var out=[parseFloat(arr[0].lat), parseFloat(arr[0].lon)];
-      geoCache[name]=out; saveCache(); cb(out);
-    }catch(e){ cb(null); }
-  };
-  xhr.send();
-}
-
-function drawRoute(r, done){
-  var coords=[], i=0;
-  function step(){
-    if(i>=r.points.length){
-      if(coords.length>=2){
-        var line=L.polyline(coords,{weight:4,opacity:0.9,color:r.color||'#1f77b4'}).addTo(map);
-        layers.push(line);
-      }
-      return done(coords);
+function drawRoute(r,done){
+ var coords=[],i=0;
+ function step(){
+  if(i>=r.points.length){
+    if(coords.length>=2){
+      var line=L.polyline(coords,{weight:4,opacity:0.9,color:r.color}).addTo(map);
+      layers.push(line);
     }
-    geocode(r.points[i], function(latlon){
-      if(latlon) coords.push(latlon);
-      i++; setTimeout(step, 140);
-    });
+    return done(coords);
   }
-  step();
+  geocode(r.points[i],function(c){if(c)coords.push(c);i++;setTimeout(step,120);});
+ }
+ step();
 }
 
 var carrierSel=document.getElementById('carrierSel');
 var routeSel=document.getElementById('routeSel');
 
 function populate(){
-  var carriers={};
-  for(var i=0;i<ROUTES.length;i++) carriers[ROUTES[i].carrier]=ROUTES[i].color;
+ var carriers={};
+ ROUTES.forEach(function(r){carriers[r.carrier]=r.color;});
+ carrierSel.innerHTML='<option value="__ALL__">— все —</option>';
+ for(var c in carriers) carrierSel.innerHTML+='<option>'+c+'</option>';
+ refresh();
 
-  carrierSel.innerHTML='';
-  var allOpt=document.createElement('option'); allOpt.value='__ALL__'; allOpt.textContent='— все —';
-  carrierSel.appendChild(allOpt);
-
-  for(var c in carriers){
-    var o=document.createElement('option'); o.value=c; o.textContent=c; carrierSel.appendChild(o);
-  }
-
-  var legend=document.getElementById('legend');
-  legend.innerHTML='';
-  for(var c2 in carriers){
-    legend.innerHTML += '<div><span style="background:'+carriers[c2]+'"></span>'+c2+'</div>';
-  }
-
-  refresh();
+ var legend=document.getElementById('legend');
+ for(var c in carriers) legend.innerHTML+='<div><span style="background:'+carriers[c]+'"></span>'+c+'</div>';
 }
 
 function refresh(){
-  var sel=carrierSel.value;
-  routeSel.innerHTML='';
-  for(var i=0;i<ROUTES.length;i++){
-    var r=ROUTES[i];
-    if(sel==='__ALL__' || r.carrier===sel){
-      var o=document.createElement('option');
-      o.value=r.route_id; o.textContent=r.route_name;
-      routeSel.appendChild(o);
-    }
-  }
-  setStatus('Готово. По умолчанию пусто.',0,false);
+ routeSel.innerHTML='';
+ ROUTES.filter(r=>carrierSel.value==='__ALL__'||r.carrier===carrierSel.value)
+ .forEach(r=>routeSel.innerHTML+='<option value="'+r.route_id+'">'+r.route_name+'</option>');
 }
+
 carrierSel.onchange=refresh;
 
-function getRouteById(id){
-  for(var i=0;i<ROUTES.length;i++) if(ROUTES[i].route_id===id) return ROUTES[i];
-  return null;
-}
-
 document.getElementById('showRouteBtn').onclick=function(){
-  var r=getRouteById(routeSel.value);
-  if(!r) return;
-  clearAll();
-  setStatus('Рисую маршрут…',10,false);
-  drawRoute(r, function(coords){
-    if(coords.length>=2) map.fitBounds(L.latLngBounds(coords),{padding:[30,30]});
-    setStatus('Готово.',100,false);
-  });
+ clearAll();
+ var r=ROUTES.find(x=>x.route_id===routeSel.value);
+ if(!r) return;
+ drawRoute(r,function(coords){if(coords.length>=2) map.fitBounds(L.latLngBounds(coords),{padding:[30,30]});});
 };
 
 document.getElementById('showAllBtn').onclick=function(){
-  clearAll();
-  var sel=carrierSel.value;
-  var queue=[];
-  for(var i=0;i<ROUTES.length;i++){
-    if(sel==='__ALL__' || ROUTES[i].carrier===sel) queue.push(ROUTES[i]);
-  }
-  if(!queue.length) return;
-
-  var idx=0, bounds=null;
-  function next(){
-    if(idx>=queue.length){
-      if(bounds) map.fitBounds(bounds,{padding:[30,30]});
-      setStatus('Готово. Маршрутов: '+queue.length,100,false);
-      return;
+ clearAll();
+ var queue=ROUTES.filter(r=>carrierSel.value==='__ALL__'||r.carrier===carrierSel.value);
+ var i=0,bounds=null;
+ function next(){
+  if(i>=queue.length){if(bounds) map.fitBounds(bounds,{padding:[30,30]});return;}
+  drawRoute(queue[i],function(coords){
+    if(coords.length>=2){
+      var b=L.latLngBounds(coords);
+      bounds=bounds?bounds.extend(b):b;
     }
-    setStatus('Рисую ('+(idx+1)+'/'+queue.length+')…', Math.round((idx/queue.length)*100), false);
-    drawRoute(queue[idx], function(coords){
-      if(coords.length>=2){
-        var b=L.latLngBounds(coords);
-        bounds = bounds ? bounds.extend(b) : b;
-      }
-      idx++; setTimeout(next, 80);
-    });
-  }
-  next();
+    i++;setTimeout(next,80);
+  });
+ }
+ next();
 };
 
-setStatus('Загрузка data/routes.json…',0,false);
-fetchJson('data/routes.json', function(err, data){
-  if(err){ setStatus('Ошибка загрузки routes.json ('+err+')',0,true); return; }
-  ROUTES=data;
-  populate();
-  setStatus('Готово. По умолчанию пусто.',0,false);
-});
+populate();
 </script>
-</body>
-</html>
+</body></html>
